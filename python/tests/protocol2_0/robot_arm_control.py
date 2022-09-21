@@ -183,60 +183,77 @@ def sin_move(t, sep = 100):
 #     dxl_goal_position[2][index] = (2050 - dxl_goal_position[1][index]) + 2050
 
 
+
+
 def act(action_list):
-    
+    for index in range(len(dxl_goal_position[0])):
+        print("Press any key to continue! (or press ESC to quit!)")
 
-for index in range(len(dxl_goal_position[0])):
-    print("Press any key to continue! (or press ESC to quit!)")
-    if getch() == chr(0x1b):
-        break
 
-    # Allocate goal position value into byte array
-    for i in range(len(joint_ids)):
-        # if i == 2:
-        #     continue
-        param_goal_position = [DXL_LOBYTE(DXL_LOWORD(dxl_goal_position[i][index])), DXL_HIBYTE(DXL_LOWORD(dxl_goal_position[i][index])), DXL_LOBYTE(DXL_HIWORD(dxl_goal_position[i][index])), DXL_HIBYTE(DXL_HIWORD(dxl_goal_position[i][index]))]
+        # Allocate goal position value into byte array
+        for i in range(len(joint_ids)):
+            # if i == 2:
+            #     continue
+            param_goal_position = [DXL_LOBYTE(DXL_LOWORD(dxl_goal_position[i][index])), DXL_HIBYTE(DXL_LOWORD(dxl_goal_position[i][index])), DXL_LOBYTE(DXL_HIWORD(dxl_goal_position[i][index])), DXL_HIBYTE(DXL_HIWORD(dxl_goal_position[i][index]))]
 
-        # Add Dynamixel goal position value to the Syncwrite parameter storage
-        dxl_addparam_result = groupSyncWrite.addParam(joint_ids[i], param_goal_position)
-        if dxl_addparam_result != True:
-            print("[ID:%03d] groupSyncWrite addparam failed" % joint_ids[i])
-            quit()
+            # Add Dynamixel goal position value to the Syncwrite parameter storage
+            dxl_addparam_result = groupSyncWrite.addParam(joint_ids[i], param_goal_position)
+            if dxl_addparam_result != True:
+                print("[ID:%03d] groupSyncWrite addparam failed" % joint_ids[i])
+                quit()
 
-    # Syncwrite goal position
-    dxl_comm_result = groupSyncWrite.txPacket()
-    if dxl_comm_result != COMM_SUCCESS:
-        print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-
-    # Clear syncwrite parameter storage
-    groupSyncWrite.clearParam()
-
-    finish_flag = [0]*len(joint_ids)
-
-    # Read position
-    while 1:
-        # Syncread present position
-        dxl_comm_result = groupSyncRead.txRxPacket()
+        # Syncwrite goal position
+        dxl_comm_result = groupSyncWrite.txPacket()
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
 
-        for j in range(len(joint_ids)):
-        # Check if groupsyncread data of Dynamixel is available
-            dxl_getdata_result = groupSyncRead.isAvailable(joint_ids[j], ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION)
-            if dxl_getdata_result != True:
-                print("[ID:%03d] groupSyncRead getdata failed" % joint_ids[j])
-                quit()
+        # Clear syncwrite parameter storage
+        groupSyncWrite.clearParam()
 
-            # Get Dynamixel present position value
-            dxl_present_position = groupSyncRead.getData(joint_ids[j], ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION)
+        finish_flag = [0]*len(joint_ids)
 
-            print("[ID:%03d] GoalPos:%03d  PresPos:%03d\t" % (joint_ids[j], dxl_goal_position[j][index], dxl_present_position))
-            
-            if (abs(dxl_goal_position[j][index] - dxl_present_position) < DXL_MOVING_STATUS_THRESHOLD):
-                finish_flag[j] = 1
-        print("finish_flag:", finish_flag)
-        if (sum(finish_flag) == len(joint_ids)):
-            break
+def read_motor_pos():
+    pos_list = []
+    # Read position
+
+    # Syncread present position
+    dxl_comm_result = groupSyncRead.txRxPacket()
+    if dxl_comm_result != COMM_SUCCESS:
+        print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+
+    for j in range(len(joint_ids)):
+    # Check if groupsyncread data of Dynamixel is available
+        dxl_getdata_result = groupSyncRead.isAvailable(joint_ids[j], ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION)
+        if dxl_getdata_result != True:
+            print("[ID:%03d] groupSyncRead getdata failed" % joint_ids[j])
+            quit()
+
+        # Get Dynamixel present position value
+        dxl_present_position = groupSyncRead.getData(joint_ids[j], ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION)
+        pos_list.append(dxl_present_position)
+
+    return pos_list
+                
+        
+                
+                 
+#         if (abs(dxl_goal_position[j][index] - dxl_present_position) < DXL_MOVING_STATUS_THRESHOLD):
+#             finish_flag[j] = 1
+
+#         print("finish_flag:", finish_flag)
+#         if (sum(finish_flag) == len(joint_ids)):
+#             break
+
+    
+def step():
+    
+    
+    
+if getch() == chr(0x1b):
+    break
+    
+        
+
         
 
 
