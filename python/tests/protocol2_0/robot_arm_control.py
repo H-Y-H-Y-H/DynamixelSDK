@@ -101,7 +101,7 @@ PROTOCOL_VERSION            = 2.0
 joint_ids = [1,2,3,4,5,6,7]
 # Use the actual port assigned to the U2D2.
 # ex) Windows: "COM*", Linux: "/dev/ttyUSB*", Mac: "/dev/tty.usbserial-*"
-DEVICENAME                  = '/dev/ttyUSB1'
+DEVICENAME                  = '/dev/ttyUSB0'
 
 TORQUE_ENABLE               = 1                 # Value for enabling the torque
 TORQUE_DISABLE              = 0                 # Value for disabling the torque
@@ -169,11 +169,22 @@ dxl_goal_position = [[1000,1000,1000,1000],
                     [1500,1200,1000,1000],    # must be inversed
                     [1500,1200,1000,1000],
                     [2047,2000,2100,2047],
-                    [2047,1800,2300,1800],
-                    [2047,1500,3000,1500],]
+                    [2047,1800,2300,2047],
+                    [2047,2047,2047,2047],]
+
+
+reset_action = [1000,1000,1000,1000,2047,2047,2047]
+
+def sin_move(t, sep = 100):
+    a0 = 300 * np.sin(t * 2*np.pi/sep )+ 1000
+    a1 = 300 * np.sin(t * 2*np.pi/sep )+ 1000
 
 # for index in range(len(dxl_goal_position[0])):
 #     dxl_goal_position[2][index] = (2050 - dxl_goal_position[1][index]) + 2050
+
+
+def act(action_list):
+    
 
 for index in range(len(dxl_goal_position[0])):
     print("Press any key to continue! (or press ESC to quit!)")
@@ -192,8 +203,6 @@ for index in range(len(dxl_goal_position[0])):
             print("[ID:%03d] groupSyncWrite addparam failed" % joint_ids[i])
             quit()
 
-
-
     # Syncwrite goal position
     dxl_comm_result = groupSyncWrite.txPacket()
     if dxl_comm_result != COMM_SUCCESS:
@@ -203,6 +212,8 @@ for index in range(len(dxl_goal_position[0])):
     groupSyncWrite.clearParam()
 
     finish_flag = [0]*len(joint_ids)
+
+    # Read position
     while 1:
         # Syncread present position
         dxl_comm_result = groupSyncRead.txRxPacket()
@@ -226,6 +237,8 @@ for index in range(len(dxl_goal_position[0])):
         print("finish_flag:", finish_flag)
         if (sum(finish_flag) == len(joint_ids)):
             break
+        
+
 
 
 
