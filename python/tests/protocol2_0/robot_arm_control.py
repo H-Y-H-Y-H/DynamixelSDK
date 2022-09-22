@@ -175,11 +175,11 @@ dxl_goal_position = [[1000,1000,1000,1000],
                     [2047,2047,2047,2047],]
 
 
-reset_cmds = [1000,1000,1000,1000,2047,2047,2047]
+reset_cmds = [3100,1000,1000,1000,2047,2047,2047]
 
 
 def random_bubbling():
-    a0 = random.uniform(500,1500)
+    a0 = random.uniform(500,4000)
     a1 = random.uniform(1000,1500)
     a2 = a1
     a3 = random.uniform(1100,2000)
@@ -291,13 +291,13 @@ if __name__ == "__main__":
         cmds = np.asarray(cmds)
         print(cmds)
 
-        time.sleep(2)
+        time.sleep(1)
         if( ep == (epoch-1)):
             cmds = reset_cmds
         for step_id in range(sep):
             # cmds = sin_move(t= i, sep= sep)
             cur_pos = np.asarray(read_motor_pos())
-            mv_cmds = (cmds-cur_pos) * (0.5*np.cos(np.pi*2*step_id /(sep*2) - np.pi)+0.5) + cur_pos
+            mv_cmds = (cmds-cur_pos) * (0.5*np.cos(np.pi*2*step_id /(sep*1.5) - np.pi)+0.5) + cur_pos
 
             step(mv_cmds)
             print("READ: ",cur_pos)
