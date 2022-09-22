@@ -33,6 +33,8 @@
 # *******************************************************************************
 
 import os
+import numpy as np
+import random
 
 if os.name == 'nt':
     import msvcrt
@@ -101,11 +103,11 @@ PROTOCOL_VERSION            = 2.0
 joint_ids = [1,2,3,4,5,6,7]
 # Use the actual port assigned to the U2D2.
 # ex) Windows: "COM*", Linux: "/dev/ttyUSB*", Mac: "/dev/tty.usbserial-*"
-DEVICENAME                  = '/dev/ttyUSB0'
+DEVICENAME                  = '/dev/ttyUSB1'
 
 TORQUE_ENABLE               = 1                 # Value for enabling the torque
 TORQUE_DISABLE              = 0                 # Value for disabling the torque
-DXL_MOVING_STATUS_THRESHOLD = 20               # Dynamixel moving status threshold
+DXL_MOVING_STATUS_THRESHOLD = 30               # Dynamixel moving status threshold
 
 index = 0
 # dxl_goal_position = [DXL_MINIMUM_POSITION_VALUE, DXL_MAXIMUM_POSITION_VALUE]         # Goal position
@@ -173,11 +175,36 @@ dxl_goal_position = [[1000,1000,1000,1000],
                     [2047,2047,2047,2047],]
 
 
-reset_action = [1000,1000,1000,1000,2047,2047,2047]
+reset_cmds = [1000,1000,1000,1000,2047,2047,2047]
+
+
+def random_bubbling():
+    a0 = random.uniform(500,1500)
+    a1 = random.uniform(1000,1500)
+    a2 = a1
+    a3 = random.uniform(1100,2000)
+    a4 = random.uniform(1800,2300)
+    a5 = random.uniform(1500,2300)
+    a6 = 2047
+
+    return [a0,a1,a2,a3,a4,a5,a6]
+
+# def sliced_motor(cur_pos, target_pos):
+
+
+
 
 def sin_move(t, sep = 100):
     a0 = 300 * np.sin(t * 2*np.pi/sep )+ 1000
-    a1 = 300 * np.sin(t * 2*np.pi/sep )+ 1000
+    a1 = 300 * np.sin(t * 2*np.pi/sep )+ 1300
+    a2 = a1
+    a3 = 200 * np.sin(t * 2*np.pi/sep )+ 1200
+    a4 = 200 * np.sin(t * 2*np.pi/sep )+ 2047
+    a5 = 200 * np.sin(t * 2*np.pi/sep )+ 2047
+    a6 = 2047
+
+    return [a0,a1,a2,a3,a4,a5,a6]
+
 
 # for index in range(len(dxl_goal_position[0])):
 #     dxl_goal_position[2][index] = (2050 - dxl_goal_position[1][index]) + 2050
@@ -186,35 +213,31 @@ def sin_move(t, sep = 100):
 
 
 def act(action_list):
-    for index in range(len(dxl_goal_position[0])):
-        print("Press any key to continue! (or press ESC to quit!)")
 
+    # Allocate goal position value into byte array
+    for i in range(len(joint_ids)):
+        # if i == 2:
+        #     continue
+        motr_pos = int(action_list[i])
+        param_goal_position = [DXL_LOBYTE(DXL_LOWORD(motr_pos)), DXL_HIBYTE(DXL_LOWORD(motr_pos)), DXL_LOBYTE(DXL_HIWORD(motr_pos)), DXL_HIBYTE(DXL_HIWORD(motr_pos))]
 
-        # Allocate goal position value into byte array
-        for i in range(len(joint_ids)):
-            # if i == 2:
-            #     continue
-            param_goal_position = [DXL_LOBYTE(DXL_LOWORD(dxl_goal_position[i][index])), DXL_HIBYTE(DXL_LOWORD(dxl_goal_position[i][index])), DXL_LOBYTE(DXL_HIWORD(dxl_goal_position[i][index])), DXL_HIBYTE(DXL_HIWORD(dxl_goal_position[i][index]))]
+        # Add Dynamixel goal position value to the Syncwrite parameter storage
+        dxl_addparam_result = groupSyncWrite.addParam(joint_ids[i], param_goal_position)
+        if dxl_addparam_result != True:
+            print("[ID:%03d] groupSyncWrite addparam failed" % joint_ids[i])
+            quit()
 
-            # Add Dynamixel goal position value to the Syncwrite parameter storage
-            dxl_addparam_result = groupSyncWrite.addParam(joint_ids[i], param_goal_position)
-            if dxl_addparam_result != True:
-                print("[ID:%03d] groupSyncWrite addparam failed" % joint_ids[i])
-                quit()
+    # Syncwrite goal position
+    dxl_comm_result = groupSyncWrite.txPacket()
+    if dxl_comm_result != COMM_SUCCESS:
+        print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
 
-        # Syncwrite goal position
-        dxl_comm_result = groupSyncWrite.txPacket()
-        if dxl_comm_result != COMM_SUCCESS:
-            print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+    # Clear syncwrite parameter storage
+    groupSyncWrite.clearParam()
 
-        # Clear syncwrite parameter storage
-        groupSyncWrite.clearParam()
-
-        finish_flag = [0]*len(joint_ids)
 
 def read_motor_pos():
     pos_list = []
-    # Read position
 
     # Syncread present position
     dxl_comm_result = groupSyncRead.txRxPacket()
@@ -222,7 +245,8 @@ def read_motor_pos():
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
 
     for j in range(len(joint_ids)):
-    # Check if groupsyncread data of Dynamixel is available
+
+        # Check if groupsyncread data of Dynamixel is available
         dxl_getdata_result = groupSyncRead.isAvailable(joint_ids[j], ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION)
         if dxl_getdata_result != True:
             print("[ID:%03d] groupSyncRead getdata failed" % joint_ids[j])
@@ -233,31 +257,51 @@ def read_motor_pos():
         pos_list.append(dxl_present_position)
 
     return pos_list
-                
         
-                
-                 
-#         if (abs(dxl_goal_position[j][index] - dxl_present_position) < DXL_MOVING_STATUS_THRESHOLD):
-#             finish_flag[j] = 1
+# if getch() == chr(0x1b):
+#     break
 
-#         print("finish_flag:", finish_flag)
-#         if (sum(finish_flag) == len(joint_ids)):
-#             break
+def step(cmds):
+    act(cmds)
+    time.sleep(0.03)
+
+    finish_flag = [0]*len(joint_ids)
+    # while 1:
+    #     pos = read_motor_pos()
+    #     for j in range(len(joint_ids)):
+    #         if (abs(cmds[j] - pos[j]) < DXL_MOVING_STATUS_THRESHOLD):
+    #             finish_flag[j] = 1
+    #     print("finish_flag:", finish_flag)
+    #     if (sum(finish_flag) == len(joint_ids)):
+    #         break
 
     
-def step():
+if __name__ == "__main__":
     
+    sep = 200
+    epoch = 4
     
-    
-if getch() == chr(0x1b):
-    break
-    
-        
+    num_steps = sep * epoch
 
-        
+    step(reset_cmds)
+    time.sleep(2)
+    for ep in range(epoch):
 
+        cmds = random_bubbling()
+        cmds = np.asarray(cmds)
+        print(cmds)
 
+        time.sleep(2)
+        if( ep == (epoch-1)):
+            cmds = reset_cmds
+        for step_id in range(sep):
+            # cmds = sin_move(t= i, sep= sep)
+            cur_pos = np.asarray(read_motor_pos())
+            mv_cmds = (cmds-cur_pos) * (0.5*np.cos(np.pi*2*step_id /(sep*2) - np.pi)+0.5) + cur_pos
 
+            step(mv_cmds)
+            print("READ: ",cur_pos)
+            print("CMDS: ",mv_cmds)
 
 
 # Clear syncread parameter storage
