@@ -1,37 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-################################################################################
-# Copyright 2017 ROBOTIS CO., LTD.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-################################################################################
-
-
-#*******************************************************************************
-#***********************     SyncRead and SyncWrite Example      ***********************
-#  Required Environment to run this example :
-#    - Protocol 2.0 supported DYNAMIXEL(X, P, PRO/PRO(A), MX 2.0 series)
-#    - DYNAMIXEL Starter Set (U2D2, U2D2 PHB, 12V SMPS)
-#  How to use the example :
-#    - Select the DYNAMIXEL in use at the MY_DXL in the example code. 
-#    - Build and Run from proper architecture subdirectory.
-#    - For ARM based SBCs such as Raspberry Pi, use linux_sbc subdirectory to build and run.
-#    - https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_sdk/overview/
-#  Author: Ryu Woon Jung (Leon)
-#  Maintainer : Zerom, Will Son
-# *******************************************************************************
-
 import os
 import numpy as np
 import random
@@ -53,6 +19,8 @@ else:
         return ch
 
 from dynamixel_sdk import *                    # Uses Dynamixel SDK library
+
+DEVICENAME                  = '/dev/ttyUSB1'
 
 #********* DYNAMIXEL Model definition *********
 #***** (Use only one definition at a time) *****
@@ -103,7 +71,7 @@ PROTOCOL_VERSION            = 2.0
 joint_ids = [1,2,3,4,5,6,7]
 # Use the actual port assigned to the U2D2.
 # ex) Windows: "COM*", Linux: "/dev/ttyUSB*", Mac: "/dev/tty.usbserial-*"
-DEVICENAME                  = '/dev/ttyUSB0'
+
 
 TORQUE_ENABLE               = 1                 # Value for enabling the torque
 TORQUE_DISABLE              = 0                 # Value for disabling the torque
@@ -179,14 +147,14 @@ reset_cmds = [3100,1000,1000,1000,2047,2047,2047]
 
 
 def random_bubbling():
-    a0 = random.uniform(2000,4000)
+    a0 = random.uniform(2400,3900)
     a1 = random.uniform(1000,1500)
     a2 = a1
-    a3 = random.uniform(1100,2000)
-    a4 = random.uniform(1800,2300)
-    a5 = random.uniform(1500,2300)
+    a3 = random.uniform(1500,2000)
+    a4 = random.uniform(1400,2300)
+    a5 = 2047
     a6 = 2047
-
+    
     return [a0,a1,a2,a3,a4,a5,a6]
 
 # def sliced_motor(cur_pos, target_pos):
@@ -279,7 +247,7 @@ def step(cmds):
 if __name__ == "__main__":
     
     sep = 100
-    epoch = 4
+    epoch = 100
     
     num_steps = sep * epoch
 
@@ -291,17 +259,21 @@ if __name__ == "__main__":
         cmds = np.asarray(cmds)
         print(cmds)
 
-        time.sleep(1)
+        # time.sleep(0)
+
         if( ep == (epoch-1)):
             cmds = reset_cmds
         for step_id in range(sep):
             # cmds = sin_move(t= i, sep= sep)
             cur_pos = np.asarray(read_motor_pos())
-            mv_cmds = (cmds-cur_pos) * (0.5*np.cos(np.pi*2*step_id /(sep*1.5) - np.pi)+0.5) + cur_pos
-
+            norm_value = (-0.5*np.cos(np.pi*step_id /sep)+0.5)
+            mv_cmds = (cmds-cur_pos) * norm_value + cur_pos
+            print(norm_value)
+            if norm_value > 0.7:
+                break
             step(mv_cmds)
-            print("READ: ",cur_pos)
-            print("CMDS: ",mv_cmds)
+            # print("READ: ",cur_pos)
+            # print("CMDS: ",mv_cmds)
 
 
 # Clear syncread parameter storage
