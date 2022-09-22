@@ -103,11 +103,11 @@ PROTOCOL_VERSION            = 2.0
 joint_ids = [1,2,3,4,5,6,7]
 # Use the actual port assigned to the U2D2.
 # ex) Windows: "COM*", Linux: "/dev/ttyUSB*", Mac: "/dev/tty.usbserial-*"
-DEVICENAME                  = '/dev/ttyUSB1'
+DEVICENAME                  = '/dev/ttyUSB0'
 
 TORQUE_ENABLE               = 1                 # Value for enabling the torque
 TORQUE_DISABLE              = 0                 # Value for disabling the torque
-DXL_MOVING_STATUS_THRESHOLD = 30               # Dynamixel moving status threshold
+DXL_MOVING_STATUS_THRESHOLD = 20               # Dynamixel moving status threshold
 
 index = 0
 # dxl_goal_position = [DXL_MINIMUM_POSITION_VALUE, DXL_MAXIMUM_POSITION_VALUE]         # Goal position
@@ -179,7 +179,7 @@ reset_cmds = [3100,1000,1000,1000,2047,2047,2047]
 
 
 def random_bubbling():
-    a0 = random.uniform(500,4000)
+    a0 = random.uniform(2000,4000)
     a1 = random.uniform(1000,1500)
     a2 = a1
     a3 = random.uniform(1100,2000)
@@ -263,7 +263,7 @@ def read_motor_pos():
 
 def step(cmds):
     act(cmds)
-    time.sleep(0.03)
+    time.sleep(0.02)
 
     finish_flag = [0]*len(joint_ids)
     # while 1:
@@ -278,7 +278,7 @@ def step(cmds):
     
 if __name__ == "__main__":
     
-    sep = 200
+    sep = 100
     epoch = 4
     
     num_steps = sep * epoch
